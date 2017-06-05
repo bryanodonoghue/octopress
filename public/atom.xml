@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[A weblog by Bryan]]></title>
+  <link href="http://www.nexus-software.ie/atom.xml" rel="self"/>
+  <link href="http://www.nexus-software.ie/"/>
+  <updated>2017-06-05T14:20:37+01:00</updated>
+  <id>http://www.nexus-software.ie/</id>
+  <author>
+    <name><![CDATA[Bryan O'Donoghue]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Screaming Fast GPIO With Intel Galileo]]></title>
+    <link href="http://www.nexus-software.ie/blog/2017/06/05/screaming-fast-gpio-with-intel-galileo/"/>
+    <updated>2017-06-05T09:37:45+01:00</updated>
+    <id>http://www.nexus-software.ie/blog/2017/06/05/screaming-fast-gpio-with-intel-galileo</id>
+    <content type="html"><![CDATA[<p><img src="images/galileo.jpg"></p>
+
+<h1>Foreword</h1>
+
+<p><em>Intel Galileo and the Quark X1000 SoC that power the Galileo, are projects on
+which I was the leading Linux engineer. One problem we had when getting the SoC
+up-and running as an Arduino host - was that the GPIOs didn&rsquo;t provide the set of
+functionality that the Arudino base-libraries provided. For that reason a
+<a href="http://www.cypress.com/file/37971/download">Cypress CY8C9520A I2C GPIO expander</a>
+was added. The Cypress though is an I2C based device and correspondingly has
+pretty disappointing GPIO performance - in comparsion to the base Arduino which
+was able to toggle GPIOs in the MegaHertz range - we were achieving the hundreds
+of KiloHertz.</em></p>
+
+<p><em>Here is a post I made on the various different ways of driving GPIO on the
+Galileo subsequent to the original release of the project in 2013.</em></p>
+
+<h1>Screaming fast GPIO on Intel Galileo</h1>
+
+<p>Galileo - has two pins IO2 and IO3 through which we can drive significant data rates.
+By default these two pins are routed to the <a
+href="http://www.cypress.com/file/37971/download">Cypress</a>.</p>
+
+<p>There are three methods to communicate with these pins - which have increasing throughput</p>
+
+<h2>digitalWrite()</h2>
+
+<p>digitalWrite(register uint8_t pin, register uint8_t val)</p>
+
+<p>Using this method it is possible to toggle an individual pin in a tight loop @ about 477 kHz</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="n">pinMode</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span><span class='line'><span class="n">pinMode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span><span class='line'><span class="n">digitalWrite</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="n">digitalWrite</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is a read-modify-write operation meaning we first read the value of the
+GPIO, then we modify the value, then we write the new value back.</p>
+
+<p>This method isn&rsquo;t especially fast since we are ultimately going through GPIOLib
+in user-space - which involves a context switch to kernel and back in order to
+toggle a GPIO.</p>
+
+<h3>Example digitalWrite() outputs 477kHz waveform on IO2:</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="n">setup</span><span class="p">(){</span>
+</span><span class='line'>  <span class="n">pinMode</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">register</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">x</span> <span class="o">=!</span><span class="n">x</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>fastGpioDigitalWrite()</h2>
+
+<p>fastGpioDigitalWrite(register uint8_t gpio, register uint8_t val)</p>
+
+<p>This function actually lets you write directly to the registers - without going
+through the code around digitalWrite() and consequently has better performance
+than a straight digitalWrite(). Unlike digitalWrite() we won&rsquo;t context-switch
+when updating the register associated with the GPIO. Only GPIO 2 and GPIO 3 are
+supported using this method.</p>
+
+<p>Using this method it is possible to toggle an individual pin (GPIO_FAST_IO2,
+GPIO_FAST_IO3) at about 680 kHz.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="n">pinMode</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span><span class='line'><span class="n">pinMode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span><span class='line'><span class="n">fastGpioDigitalWrite</span><span class="p">(</span><span class="n">GPIO_FAST_IO2</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="n">fastGpioDigitalWrite</span><span class="p">(</span><span class="n">GPIO_FAST_IO3</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Again this uses read/modify/write - and can toggle one GPIO at a time</p>
+
+<h3>Example fastGpioDigitalWrite - outputs 683kHz waveform on IO3:</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="n">setup</span><span class="p">(){</span>
+</span><span class='line'>  <span class="n">pinMode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">register</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">fastGpioDigitalWrite</span><span class="p">(</span><span class="n">GPIO_FAST_IO3</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">x</span> <span class="o">=!</span><span class="n">x</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>fastGpioDigitalWriteDestructive()</h2>
+
+<p>fastGpioDigitalWriteDestructive(register uint8_t gpio_mask)</p>
+
+<p>Using this method it is possible to achieve 2.93 Mhz data toggle rate on IO2/IO3 individually or simultaneously</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="n">pinMode</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span><span class='line'><span class="n">pinMode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It is the responsibility of the application to maintain the state of the GPIO
+registers directly. To enable this a function called fastGpioDigitalLatch() is
+provided - which allows the calling logic to latch the initial state of the
+GPIOs - before updating later. This method just writes GPIO bits straight to the
+GPIO register - i.e. a destructive write - for this reason it is approximately 2
+x faster then read/modify/write. Twice as fast for a given write - means four
+times faster for a given wave form - hence ~700kHz (680kHz) becomes ~2.8Mhz
+(2.93 MHz)</p>
+
+<h3>Example fastGpioDigitalWriteDestructive outputs 2.93MHz waveform on IO3:</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="kt">uint32_t</span> <span class="n">latchValue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">setup</span><span class="p">(){</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">pinMode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">OUTPUT_FAST</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">latchValue</span> <span class="o">=</span> <span class="n">fastGpioDigitalLatch</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span>
+</span><span class='line'>      <span class="n">fastGpioDigitalWriteDestructive</span><span class="p">(</span><span class="n">latchValue</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">latchValue</span> <span class="o">^=</span> <span class="n">GPIO_FAST_IO3</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Example-4 fastGpioDigitalWriteDestructive outputs 2.93MHz waveform on both IO2 and IO3:</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="kt">uint32_t</span> <span class="n">latchValue</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">setup</span><span class="p">(){</span>
+</span><span class='line'>  <span class="n">pinMode</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">OUPUT_FASTMODE</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">pinMode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">OUPUT_FASTMODE</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">latchValue</span> <span class="o">=</span> <span class="n">fastGpioDigitalLatch</span><span class="p">();</span> <span class="c1">// latch initial state</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">fastGpioDigitalWriteDestructive</span><span class="p">(</span><span class="n">latchValue</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="n">latchValue</span> <span class="o">&amp;</span> <span class="n">GPIO_FAST_IO3</span><span class="p">){</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="n">latchValue</span> <span class="o">|=</span> <span class="n">GPIO_FAST_IO2</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">latchValue</span> <span class="o">&amp;=</span> <span class="o">~</span> <span class="n">GPIO_FAST_IO3</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="p">}</span><span class="k">else</span><span class="p">{</span>
+</span><span class='line'>          <span class="n">latchValue</span> <span class="o">|=</span> <span class="n">GPIO_FAST_IO3</span><span class="p">;</span>
+</span><span class='line'>          <span class="n">latchValue</span> <span class="o">&amp;=</span> <span class="n">GPIO_FAST_IO2</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In other words the responsibility lies with the application designer in cases 3
+and 4 to ensure the GPIO register values are correct - assuming - these values
+matter to the application use-case.</p>
+]]></content>
+  </entry>
+  
+</feed>

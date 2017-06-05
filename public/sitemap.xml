@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>http://www.nexus-software.ie/blog/2017/06/05/screaming-fast-gpio-with-intel-galileo/</loc>
+<lastmod>2017-06-05T09:37:45+01:00</lastmod>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/archives/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/x86/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/intel/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/galileo/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/arduino/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/linux/</loc>
+</url>
+</urlset>
