@@ -1,0 +1,5 @@
+<section> 
+  <h1>Links</h1>
+  {% capture canonical %}{{ site.url }}{% if site.permalink contains '.html' %}{{ page.url }}{% else %}{{ page.url | remove:'index.html' }}{% endif %}{% endcapture %}
+  <li><a href="{{ canonical }}">{{site.url}}</a></li>
+</section>
