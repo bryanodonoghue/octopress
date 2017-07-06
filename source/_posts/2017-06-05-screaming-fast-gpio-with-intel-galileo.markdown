@@ -5,7 +5,7 @@ date: 2017-06-05 09:37:45 +0100
 comments: true
 categories: [x86, Intel, Galileo, Arduino, Linux]
 ---
-{% img images/galileo.jpg %}
+{% img /images/galileo.jpg %}
 
 Foreword
 ========

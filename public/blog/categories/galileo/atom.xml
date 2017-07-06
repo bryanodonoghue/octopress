@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Galileo | A weblog by Bryan]]></title>
   <link href="http://www.nexus-software.ie/blog/categories/galileo/atom.xml" rel="self"/>
   <link href="http://www.nexus-software.ie/"/>
-  <updated>2017-06-07T20:33:48+01:00</updated>
+  <updated>2017-07-06T10:19:07+01:00</updated>
   <id>http://www.nexus-software.ie/</id>
   <author>
     <name><![CDATA[Bryan O'Donoghue]]></name>
@@ -18,7 +18,7 @@
     <link href="http://www.nexus-software.ie/blog/2017/06/05/screaming-fast-gpio-with-intel-galileo/"/>
     <updated>2017-06-05T09:37:45+01:00</updated>
     <id>http://www.nexus-software.ie/blog/2017/06/05/screaming-fast-gpio-with-intel-galileo</id>
-    <content type="html"><![CDATA[<p><img src="images/galileo.jpg"></p>
+    <content type="html"><![CDATA[<p><img src="/images/galileo.jpg"></p>
 
 <h1>Foreword</h1>
 
