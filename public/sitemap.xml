@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
+<loc>http://www.nexus-software.ie/blog/2017/07/23/fixing-a-boiling-hot-macbook-retina-2015/</loc>
+<lastmod>2017-07-23T12:43:58+01:00</lastmod>
+</url>
+<url>
 <loc>http://www.nexus-software.ie/blog/2017/06/05/screaming-fast-gpio-with-intel-galileo/</loc>
 <lastmod>2017-06-05T09:37:45+01:00</lastmod>
 </url>
@@ -24,5 +28,20 @@
 </url>
 <url>
 <loc>http://www.nexus-software.ie/blog/categories/linux/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/macbook/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/retina/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/machine/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/check/</loc>
+</url>
+<url>
+<loc>http://www.nexus-software.ie/blog/categories/exception/</loc>
 </url>
 </urlset>

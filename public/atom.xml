@@ -4,7 +4,7 @@
   <title><![CDATA[A weblog by Bryan]]></title>
   <link href="http://www.nexus-software.ie/atom.xml" rel="self"/>
   <link href="http://www.nexus-software.ie/"/>
-  <updated>2017-07-06T10:19:07+01:00</updated>
+  <updated>2017-07-28T11:19:57+01:00</updated>
   <id>http://www.nexus-software.ie/</id>
   <author>
     <name><![CDATA[Bryan O'Donoghue]]></name>
@@ -12,6 +12,196 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Fixing a Boiling Hot Macbook Retina 2015]]></title>
+    <link href="http://www.nexus-software.ie/blog/2017/07/23/fixing-a-boiling-hot-macbook-retina-2015/"/>
+    <updated>2017-07-23T12:43:58+01:00</updated>
+    <id>http://www.nexus-software.ie/blog/2017/07/23/fixing-a-boiling-hot-macbook-retina-2015</id>
+    <content type="html"><![CDATA[<h1>Problem statement</h1>
+
+<p>My main machine is a 2015 macbook pro retina on which I run Linux natively (not in a VM)</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/macbook-retina-display-2015.jpg"></p>
+
+<p>It&rsquo;s a beautiful machine with a high-density pixel display. It&rsquo;s also an oven whenever you start to do some serious work &trade; on it.
+What do I mean by serious work ?</p>
+
+<ul>
+<li>Compiling clang</li>
+<li>Compiling Android</li>
+<li>Compiling a meaty Linux kernel</li>
+</ul>
+
+
+<p>In tandem with say having a Google Hangouts call, watching youtube or streaming some music over whatever music streaming service it us you use. [offtopic:] I spotify BTW.</p>
+
+<h1>Background</h1>
+
+<p>Q: In the first instance - what type of processor is in this MacBook ?</p>
+
+<blockquote><p>cat /proc/cpuinfo<br/>processor  : 7<br/>vendor_id   : GenuineIntel<br/>cpu family   : 6<br/>model       : 70<br/>model name : Intel(R) Core(TM) i7-4960HQ CPU @ 2.60GHz<br/>stepping    : 1<br/>microcode   : 0xf<br/>cpu MHz       : 3403.257<br/>cache size   : 6144 KB<br/>physical id   : 0<br/>siblings    : 8<br/>core id     : 3<br/>cpu cores   : 4<br/>apicid      : 7<br/>initial apicid  : 7<br/>fpu     : yes<br/>fpu_exception : yes<br/>cpuid level   : 13<br/>wp     : yes<br/>flags     : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf eagerfpu pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm epb tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm xsaveopt dtherm ida arat pln pts<br/>bugs        :<br/>bogomips  : 5188.50<br/>clflush size  : 64<br/>cache_alignment    : 64<br/>address sizes  : 39 bits physical, 48 bits virtual<br/>power management:</p></blockquote>
+
+
+<p>So it&rsquo;s a <a href="http://ark.intel.com/products/76088/Intel-Core-i7-4960HQ-Processor-6M-Cache-up-to-3_80-GHz">Intel&reg; Core&trade; i7-4960HQ CPU @ 2.60GHz</a> with four cores and eight threads.</p>
+
+<p>Looking at the output of the &lsquo;sensors&rsquo; application in a quiescent system we can see the following.</p>
+
+<blockquote><p>$ sensors<br/>BAT0-virtual-0<br/>Adapter: Virtual device<br/>temp1:        +33.7°C  </p><p>coretemp-isa-0000<br/>Adapter: ISA adapter<br/>Physical id 0:  +60.0°C  (high = +84.0°C, crit = +100.0°C)<br/>Core 0:         +59.0°C  (high = +84.0°C, crit = +100.0°C)<br/>Core 1:         +60.0°C  (high = +84.0°C, crit = +100.0°C)<br/>Core 2:         +59.0°C  (high = +84.0°C, crit = +100.0°C)<br/>Core 3:         +58.0°C  (high = +84.0°C, crit = +100.0°C)</p><p>applesmc-isa-0300<br/>Adapter: ISA adapter<br/>Left side  : 2158 RPM  (min = 2160 RPM, max = 6156 RPM)<br/>Right side : 2001 RPM  (min = 2000 RPM, max = 5700 RPM)</p></blockquote>
+
+
+<ul>
+<li>Four &lsquo;Core #&rsquo; sensors reporting a temperature</li>
+<li>One &lsquo;Physical id 0&rsquo; reporting a temperature</li>
+<li>A listing for a Left side fan and a Right side fan</li>
+</ul>
+
+
+<p>In the default quiescent state - which for the purposes of this blog is an Ubuntu system booted to a desktop with two terminal windows open we see:</p>
+
+<ul>
+<li>Physical id 0 @ 55 c</li>
+<li>Core 0 @ 52</li>
+<li>Core 1 @ 53</li>
+<li>Core 2 @ 53</li>
+<li>Core 3 @ 54</li>
+<li>Left-Fan @ 2165/6156 RPM</li>
+<li>Right side @ 1999/5700 RPM</li>
+</ul>
+
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/quiescent_system_sensors_pre.png"></p>
+
+<p>Note there are four &lsquo;Core&rsquo; sensors one for each of the cores previously identified for the 4960HQ and one &lsquo;Physical id 0&rsquo; - physical id refers to the &lsquo;package&rsquo; i.e. the four cores sit on one physical chip that gets soldered down to the board and this chip has its own individual sensor.</p>
+
+<p>Take a look at the inside of the mac - the thing marked &ldquo;CPU package&rdquo; - that is what &lsquo;Physical id 0&rsquo; referes to. The individual Cores are inside of that package.</p>
+
+<p>Lets look inside the Macbook for starters.</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/pcb_annotated.png"></p>
+
+<p>So here we can see two big fans &ldquo;Left fan&rdquo; (Left side) and &ldquo;Right fan&rdquo; (Right side), Air vents right beside those fans, a GPU (graphics processing unit) and CPU package (remember we said four cores inside of one &lsquo;package&rsquo;) plus a heat-strip to dissipate the heat from the CPU and GPU.</p>
+
+<p>Now that strip is really not much to draw away any excess heat generated especially when you consider this is how the 4950HQ (a desktop cousin of the 4960HQ) is tooled up for cooling.</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/4950hq-board.jpg"></p>
+
+<h1>How bad is it really ?</h1>
+
+<p>Are you just <a href="http://www.dictionary.com/browse/whinging">whinging</a> - how bad can it really be ?</p>
+
+<p>Let&rsquo;s run a test.
+Initial conditions are</p>
+
+<ul>
+<li>A freshly booted ubuntu system</li>
+<li>Two windows open one to build Linux one to monitor &lsquo;sensors&rsquo;</li>
+<li>A running Webcam capture (to crank up the GPU)</li>
+</ul>
+
+
+<p>What will we monitor ?
+For the purposes of this test we will monitor the CPU temperature and the kernel log.</p>
+
+<p>What will the test be ?
+Against Linux commit 520eccdfe187 (&ldquo;Linux 4.13-rc2&rdquo;) we will run this command with a Webcam stream active</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='C'><span class='line'><span class="n">make</span> <span class="n">clean</span><span class="p">;</span> <span class="n">make</span> <span class="n">mrproper</span><span class="p">;</span> <span class="n">make</span> <span class="n">distclean</span><span class="p">;</span> <span class="n">make</span> <span class="n">allyesconfig</span> <span class="o">&amp;&amp;</span> <span class="n">time</span> <span class="n">make</span> <span class="n">bzImage</span> <span class="o">-</span><span class="n">j</span> <span class="mi">14</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This will switch all kernel options for an x86_64 system to &lsquo;y&rsquo; and then run a build of up-to 14 concurrent build processes.</p>
+
+<p>To begin with the build seems OK recall the initial conditions</p>
+
+<ul>
+<li>Core 0 @ 52</li>
+<li>Core 1 @ 53</li>
+<li>Core 2 @ 53</li>
+<li>Core 3 @ 54</li>
+<li>Left-Fan @ 2165/6156 RPM</li>
+<li>Right side @ 1999/5700 RPM</li>
+</ul>
+
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/quiescent_system_sensors_pre.png"></p>
+
+<p>Viewed against our mid-build metrics</p>
+
+<ul>
+<li>Core 0 @ 75 C</li>
+<li>Core 1 @ 76 C</li>
+<li>Core 2 @ 76 C</li>
+<li>Core 3 @ 80 C</li>
+<li>Left-Fan @ 6096/6156 RPM</li>
+<li>Right side @ 5652/5700 RPM</li>
+</ul>
+
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/unfix_build_midway.png"></p>
+
+<p>Here we see the Core temperature is hot yes but below the &lsquo;high&rsquo; threshold and way below critical.
+The fans are working at the top of their limit to keep the processor in that state.</p>
+
+<p>However the fans keep spinning and eventually we get this kernel message indicating the temperature sensors have detected a prolonged &lsquo;critical&rsquo; temperature.</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/overheat_machine_check.png"></p>
+
+<p>This is bad, very bad. Intel rates most of its processors at 105 degrees celcius maximum i.e. if your processor gets this hot a component inside of it will drive an exception to shut down the system entirely before things start to melt. In this case we can see that the ACPI descriptors provided by the BIOS have told Linux that 100 degrees celcius is the maximum.</p>
+
+<p>In any case - it would be bad to allow things to continue on this way - IT WOULD BE BAD.</p>
+
+<iframe width="420" height="315" src="http://www.youtube.com/embed/jyaLZHiJJnE" frameborder="0" allowfullscreen></iframe>
+
+
+<h1>What the hell can we do about it ?</h1>
+
+<p>Helpfully I&rsquo;m not the first person to loose the rag with the over-heating Macs.
+Somebody else has already taken the extreme step of drilling their <a href="https://www.macissues.com/2014/12/29/radical-fix-drill-holes-in-your-mac-to-make-it-run-cooler/">Mac</a></p>
+
+<p>I should say - my Dad did the marking and drilling here - since he has more experience/skill at this type of thing than I do :)</p>
+
+<p>The first thing to do is to mark out where the drill holes will go.</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/first_markout.png"></p>
+
+<p>Then drill the holes</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/first_mesh.png"></p>
+
+<p>Then the second set of holes - this time marked in a box shape</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/second_markout.png"></p>
+
+<p>And finally the finished product</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/finished.png"></p>
+
+<h1>Results</h1>
+
+<p>So that&rsquo;s nice - you&rsquo;ve drilled a hole in your €2,500 macbook - congratulations.
+Does it make a difference to temperature and Machine-check-exceptions ?</p>
+
+<p>In short - yes; whereas before the holes were drilled @ around 5900 RPM Left Side - the fan couldn&rsquo;t spin faster to evacuate out more air - so the processor just overheated.</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/unfix_build_midway.png"></p>
+
+<p>Running the same test again we find that the Machine check exceptions have gone.</p>
+
+<p>The hottest I&rsquo;ve seen the processor get is 91 C - hot but still 9 degrees off max. Note how for a similar fan RPM we can operate at a much higher temperature.</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/hottest.png"></p>
+
+<p>Now with more airflow - the fans still aren&rsquo;t maxed out when the temperature rises to 90+ degrees, and can allow the processor to draw more power - and rotate even faster to compensate.</p>
+
+<p>Thus far - despite doing a few builds while watching some youtube, I haven&rsquo;t encountered the same error again.</p>
+
+<p>It looks like</p>
+
+<p><img src="http://www.nexus-software.ie/images/macbook_fix/tappy.jpg"></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Screaming Fast GPIO With Intel Galileo]]></title>
